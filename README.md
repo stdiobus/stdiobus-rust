@@ -1,4 +1,4 @@
-# stdiobus-rs
+# stdiobus-rust
 
 Rust SDK for stdio_bus - the AI agent transport layer.
 
