@@ -13,8 +13,8 @@ This crate provides raw, unsafe FFI bindings to the stdio_bus C library. Most us
 Requires `libstdio_bus.a` built from the main stdio_bus repository:
 
 ```bash
-git clone https://github.com/stdiobus/stdiobus
-cd stdiobus
+git clone https://github.com/stdiobus/stdiobus-rust
+cd stdiobus-rust
 make lib
 ```
 

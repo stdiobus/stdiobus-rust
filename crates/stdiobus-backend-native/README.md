@@ -20,8 +20,8 @@ stdiobus-backend-native = "1.0"
 Build `libstdio_bus.a` from the main repository:
 
 ```bash
-git clone https://github.com/stdiobus/stdiobus
-cd stdiobus
+git clone https://github.com/stdiobus/stdiobus-rust
+cd stdiobus-rust
 make lib
 
 export STDIO_BUS_LIB_DIR=$(pwd)/build
