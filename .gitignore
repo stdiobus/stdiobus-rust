@@ -3,6 +3,8 @@ build/
 dist/
 *.o
 *.a
+!libstdio_bus.a
+lib/libstdio_bus.a
 *.so
 *.dylib
 
