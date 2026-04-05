@@ -1,7 +1,7 @@
 # stdiobus-core
 
-[![Crates.io](https://img.shields.io/crates/v/stdiobus-core.svg)](https://crates.io/crates/stdiobus-core)
-[![License](https://img.shields.io/crates/l/stdiobus-core)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/stdiobus-core?style=for-the-badge&logo=rust&logoColor=white&color=orange)](https://crates.io/crates/stdiobus-core)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=apache)](LICENSE)
 
 Core types and protocol models for stdio_bus - the AI agent transport layer.
 

@@ -1,7 +1,7 @@
 # stdiobus
 
-[![Crates.io](https://img.shields.io/crates/v/stdiobus.svg)](https://crates.io/crates/stdiobus)
-[![License](https://img.shields.io/crates/l/stdiobus)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/stdiobus?style=for-the-badge&logo=rust&logoColor=white&color=orange)](https://crates.io/crates/stdiobus-client)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=apache)](LICENSE)
 
 AI agent transport layer - unified SDK for MCP/ACP protocols.
 
