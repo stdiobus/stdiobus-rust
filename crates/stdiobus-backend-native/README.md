@@ -1,8 +1,7 @@
 # stdiobus-backend-native
 
 [![Crates.io](https://img.shields.io/crates/v/stdiobus-backend-native.svg)](https://crates.io/crates/stdiobus-backend-native)
-[![Documentation](https://docs.rs/stdiobus-backend-native/badge.svg)](https://docs.rs/stdiobus-backend-native)
-[![License](https://img.shields.io/crates/l/stdiobus-backend-native.svg)](LICENSE)
+[![License](https://img.shields.io/crates/l/stdiobus-backend-native)](LICENSE)
 
 Native FFI backend for stdio_bus - direct C library integration.
 

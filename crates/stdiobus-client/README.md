@@ -1,8 +1,7 @@
 # stdiobus-client
 
 [![Crates.io](https://img.shields.io/crates/v/stdiobus-client.svg)](https://crates.io/crates/stdiobus-client)
-[![Documentation](https://docs.rs/stdiobus-client/badge.svg)](https://docs.rs/stdiobus-client)
-[![License](https://img.shields.io/crates/l/stdiobus-client.svg)](LICENSE)
+[![License](https://img.shields.io/crates/l/stdiobus-client)](LICENSE)
 
 Async client for stdio_bus - the AI agent transport layer for MCP/ACP protocols.
 

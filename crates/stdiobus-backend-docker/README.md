@@ -1,8 +1,7 @@
 # stdiobus-backend-docker
 
 [![Crates.io](https://img.shields.io/crates/v/stdiobus-backend-docker.svg)](https://crates.io/crates/stdiobus-backend-docker)
-[![Documentation](https://docs.rs/stdiobus-backend-docker/badge.svg)](https://docs.rs/stdiobus-backend-docker)
-[![License](https://img.shields.io/crates/l/stdiobus-backend-docker.svg)](LICENSE)
+[![License](https://img.shields.io/crates/l/stdiobus-backend-docker)](LICENSE)
 
 Docker backend for stdio_bus - containerized transport layer.
 

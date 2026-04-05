@@ -1,8 +1,7 @@
 # stdiobus-ffi
 
 [![Crates.io](https://img.shields.io/crates/v/stdiobus-ffi.svg)](https://crates.io/crates/stdiobus-ffi)
-[![Documentation](https://docs.rs/stdiobus-ffi/badge.svg)](https://docs.rs/stdiobus-ffi)
-[![License](https://img.shields.io/crates/l/stdiobus-ffi.svg)](LICENSE)
+[![License](https://img.shields.io/crates/l/stdiobus-ffi)](LICENSE)
 
 FFI bindings to libstdio_bus C library.
 
