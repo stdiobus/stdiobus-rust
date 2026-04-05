@@ -2,6 +2,8 @@
 // Copyright (c) 2026-present Raman Marozau <raman@worktif.com>
 // Copyright (c) 2026-present stdiobus contributors
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 //! FFI bindings to libstdio_bus C library
 //!
 //! This crate provides raw FFI bindings to the stdio_bus embedding API

@@ -14,6 +14,10 @@ categories = ["network-programming", "asynchronous", "external-ffi-bindings"]
 readme = "README.md"
 include = ["src/**/*", "lib/**/*", "build.rs", "Cargo.toml", "README.md", "LICENSE*"]
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [dependencies]
 stdiobus-core = { workspace = true }
 stdiobus-ffi = { workspace = true }

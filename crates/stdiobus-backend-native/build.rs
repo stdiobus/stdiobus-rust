@@ -15,6 +15,12 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    // docs.rs sets DOCS_RS=1 — skip native linking so documentation builds succeed
+    if env::var_os("DOCS_RS").is_some() {
+        println!("cargo:warning=docs.rs build: skipping native library linking");
+        return;
+    }
+    
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let crate_path = PathBuf::from(&manifest_dir);
     let lib_base = crate_path.join("lib");

@@ -2,6 +2,8 @@
 // Copyright (c) 2026-present Raman Marozau <raman@worktif.com>
 // Copyright (c) 2026-present stdiobus contributors
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 //! Async client for stdio_bus - AI agent transport layer
 //!
 //! # Example

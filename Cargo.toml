@@ -28,11 +28,11 @@ categories = ["network-programming", "asynchronous", "api-bindings"]
 
 [workspace.dependencies]
 # Internal crates
-stdiobus-core = { version = "1.0.0", path = "crates/stdiobus-core" }
-stdiobus-ffi = { version = "1.0.0", path = "crates/stdiobus-ffi" }
-stdiobus-client = { version = "1.0.0", path = "crates/stdiobus-client" }
-stdiobus-backend-docker = { version = "1.0.0", path = "crates/stdiobus-backend-docker" }
-stdiobus-backend-native = { version = "1.0.0", path = "crates/stdiobus-backend-native" }
+stdiobus-core = { version = "1.0.1", path = "crates/stdiobus-core" }
+stdiobus-ffi = { version = "1.0.1", path = "crates/stdiobus-ffi" }
+stdiobus-client = { version = "1.0.1", path = "crates/stdiobus-client" }
+stdiobus-backend-docker = { version = "1.0.1", path = "crates/stdiobus-backend-docker" }
+stdiobus-backend-native = { version = "1.0.1", path = "crates/stdiobus-backend-native" }
 
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
