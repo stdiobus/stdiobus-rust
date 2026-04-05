@@ -1,0 +1,40 @@
+# Build artifacts
+build/
+dist/
+*.o
+*.a
+*.so
+*.dylib
+
+# macOS
+.DS_Store
+
+# Sandbox / dev files
+sandbox/
+
+# IDE
+.idea
+.vscode
+.kiro
+
+# Secrets
+api-keys-json
+
+# Rust
+target/
+Cargo.lock
+!sdk/rust/Cargo.lock
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.test
+*.out
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

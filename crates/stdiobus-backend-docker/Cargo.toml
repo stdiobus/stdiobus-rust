@@ -1,0 +1,28 @@
+[package]
+name = "stdiobus-backend-docker"
+description = "Docker backend for stdio_bus - containerized transport layer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/stdiobus-backend-docker"
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["stdiobus", "docker", "backend", "container"]
+categories = ["network-programming", "asynchronous"]
+readme = "README.md"
+include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE*"]
+
+[dependencies]
+stdiobus-core = { workspace = true }
+
+tokio = { workspace = true, features = ["process", "net", "io-util", "sync", "time"] }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"

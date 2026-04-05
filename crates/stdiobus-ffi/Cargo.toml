@@ -1,0 +1,21 @@
+[package]
+name = "stdiobus-ffi"
+description = "FFI bindings to libstdio_bus C library for stdio_bus transport layer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/stdiobus-ffi"
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["stdiobus", "ffi", "bindings", "c-library"]
+categories = ["external-ffi-bindings", "api-bindings"]
+readme = "README.md"
+include = ["src/**/*", "build.rs", "Cargo.toml", "README.md", "LICENSE*"]
+
+[dependencies]
+libc = { workspace = true }
+
+[build-dependencies]
+cc = "1.0"

@@ -1,0 +1,26 @@
+[package]
+name = "stdiobus-backend-native"
+description = "Native FFI backend for stdio_bus - direct C library integration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/stdiobus-backend-native"
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["stdiobus", "native", "backend", "ffi"]
+categories = ["network-programming", "asynchronous", "external-ffi-bindings"]
+readme = "README.md"
+include = ["src/**/*", "lib/**/*", "build.rs", "Cargo.toml", "README.md", "LICENSE*"]
+
+[dependencies]
+stdiobus-core = { workspace = true }
+stdiobus-ffi = { workspace = true }
+
+tokio = { workspace = true, features = ["sync", "time"] }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+
+[build-dependencies]
+cc = "1.0"
