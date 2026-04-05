@@ -2,8 +2,7 @@
 
 Rust SDK for stdio_bus - the AI agent transport layer.
 
-[![Crates.io](https://img.shields.io/crates/v/stdiobus-client.svg)](https://img.shields.io/crates/v/stdiobus
-[![Documentation](https://docs.rs/stdiobus-client/badge.svg)](https://docs.rs/stdiobus-client)
+[![Crates.io](https://img.shields.io/crates/v/stdiobus-client.svg)](https://img.shields.io/crates/v/stdiobus)
 [![License](https://img.shields.io/crates/l/stdiobus-client)](LICENSE)
 
 ## Features
