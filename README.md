@@ -291,34 +291,6 @@ cargo test
 cargo build --features native
 ```
 
-### Building Native Backend
-
-The native backend uses `libstdio_bus.a` bundled in `lib/` directory.
-
-**For SDK users:** The library is bundled. No additional setup needed.
-
-```bash
-# Build SDK
-cargo build --release
-
-# Run unit tests
-cargo test --release
-```
-
-**For development (building from main repo):**
-
-```bash
-# Build libstdio_bus from source (from main repository root)
-make lib
-
-# Copy to SDK
-cp build/libstdio_bus.a sdk/rust/lib/
-
-# Build Rust SDK
-cd sdk/rust
-cargo build --features native
-```
-
 ## Testing
 
 **Unit tests** are co-located with source code (`#[cfg(test)]`) and run with:
