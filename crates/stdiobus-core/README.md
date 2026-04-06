@@ -16,6 +16,8 @@ stdiobus-core = "1.0"
 
 ## Contents
 
+- `BusConfig`, `PoolConfig`, `LimitsConfig` - Typed configuration matching C bus JSON schema
+- `ConfigSource` - Configuration source enum (programmatic or file path)
 - `Error` - Comprehensive error types with `is_retryable()` support
 - `ErrorCode` - Error code enumeration matching C library codes
 - `BusState` - Bus lifecycle states (Created, Starting, Running, Stopping, Stopped)

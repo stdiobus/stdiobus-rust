@@ -5,13 +5,13 @@
 //! Builder pattern for StdioBus client
 
 use crate::client::StdioBus;
-use stdiobus_core::{BackendMode, DockerOptions, Error, Result};
+use stdiobus_core::{BackendMode, BusConfig, ConfigSource, DockerOptions, Error, Result};
 use std::time::Duration;
 
 /// Builder for creating StdioBus instances
 #[derive(Debug, Clone)]
 pub struct StdioBusBuilder {
-    config_path: Option<String>,
+    config_source: Option<ConfigSource>,
     backend: BackendMode,
     timeout: Duration,
     docker_options: Option<DockerOptions>,
@@ -20,7 +20,7 @@ pub struct StdioBusBuilder {
 impl Default for StdioBusBuilder {
     fn default() -> Self {
         Self {
-            config_path: None,
+            config_source: None,
             backend: BackendMode::Auto,
             timeout: Duration::from_secs(30),
             docker_options: None,
@@ -34,9 +34,19 @@ impl StdioBusBuilder {
         Self::default()
     }
 
-    /// Set the configuration file path (required)
+    /// Set programmatic configuration (primary, recommended).
+    ///
+    /// Mutually exclusive with `config_path`.
+    pub fn config(mut self, config: BusConfig) -> Self {
+        self.config_source = Some(ConfigSource::Config(config));
+        self
+    }
+
+    /// Set the configuration file path.
+    ///
+    /// Mutually exclusive with `config`.
     pub fn config_path(mut self, path: impl Into<String>) -> Self {
-        self.config_path = Some(path.into());
+        self.config_source = Some(ConfigSource::Path(path.into()));
         self
     }
 
@@ -92,10 +102,15 @@ impl StdioBusBuilder {
 
     /// Build the StdioBus instance
     pub fn build(self) -> Result<StdioBus> {
-        let config_path = self.config_path.ok_or_else(|| Error::InvalidArgument {
-            message: "config_path is required".to_string(),
+        let config_source = self.config_source.ok_or_else(|| Error::InvalidArgument {
+            message: "config or config_path is required".to_string(),
         })?;
 
-        StdioBus::new(config_path, self.backend, self.timeout, self.docker_options)
+        // Validate if programmatic config
+        if let ConfigSource::Config(ref cfg) = config_source {
+            cfg.validate().map_err(|msg| Error::InvalidArgument { message: msg })?;
+        }
+
+        StdioBus::new(config_source, self.backend, self.timeout, self.docker_options)
     }
 }

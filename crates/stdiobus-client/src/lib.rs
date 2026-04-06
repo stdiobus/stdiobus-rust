@@ -14,7 +14,15 @@
 //! #[tokio::main]
 //! async fn main() -> stdiobus_core::Result<()> {
 //!     let bus = StdioBus::builder()
-//!         .config_path("./config.json")
+//!         .config(stdiobus_core::BusConfig {
+//!             pools: vec![stdiobus_core::PoolConfig {
+//!                 id: "worker".into(),
+//!                 command: "node".into(),
+//!                 args: vec!["./worker.js".into()],
+//!                 instances: 2,
+//!             }],
+//!             limits: None,
+//!         })
 //!         .build()?;
 //!
 //!     bus.start().await?;
@@ -39,6 +47,7 @@ pub use client::StdioBus;
 
 // Re-export core types
 pub use stdiobus_core::{
-    Backend, BackendMode, BusMessage, BusState, BusStats, Error, ErrorCode, Extensions, Identity,
-    JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, RequestOptions, Result,
+    Backend, BackendMode, BusConfig, BusMessage, BusState, BusStats, ConfigSource, Error,
+    ErrorCode, Extensions, Identity, JsonRpcMessage, JsonRpcRequest, JsonRpcResponse,
+    LimitsConfig, PoolConfig, RequestOptions, Result,
 };

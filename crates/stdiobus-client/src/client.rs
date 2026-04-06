@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use stdiobus_core::{
-    Backend, BackendMode, BusMessage, BusState, BusStats, DockerOptions, Error, JsonRpcRequest,
+    Backend, BackendMode, BusMessage, BusState, BusStats, ConfigSource, DockerOptions, Error, JsonRpcRequest,
     JsonRpcResponse, RequestOptions, Result, generate_client_session_id,
 };
 use tokio::sync::{broadcast, oneshot, Mutex};
@@ -45,12 +45,12 @@ impl StdioBus {
 
     /// Create a new StdioBus instance
     pub(crate) fn new(
-        config_path: String,
+        config_source: ConfigSource,
         backend_mode: BackendMode,
         default_timeout: Duration,
         docker_options: Option<DockerOptions>,
     ) -> Result<Self> {
-        let backend = resolve_backend(backend_mode, &config_path, docker_options)?;
+        let backend = resolve_backend(backend_mode, config_source, docker_options)?;
         let (notification_tx, _) = broadcast::channel(100);
 
         Ok(Self {

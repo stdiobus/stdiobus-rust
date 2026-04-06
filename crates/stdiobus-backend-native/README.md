@@ -31,10 +31,18 @@ export STDIO_BUS_LIB_DIR=$(pwd)/build
 Most users should use `stdiobus-client` with the `native` feature:
 
 ```rust
-use stdiobus_client::StdioBus;
+use stdiobus_client::{StdioBus, BusConfig, PoolConfig};
 
 let bus = StdioBus::builder()
-    .config_path("./config.json")
+    .config(BusConfig {
+        pools: vec![PoolConfig {
+            id: "worker".into(),
+            command: "node".into(),
+            args: vec!["./worker.js".into()],
+            instances: 2,
+        }],
+        limits: None,
+    })
     .backend_native()
     .build()?;
 ```
@@ -43,7 +51,21 @@ let bus = StdioBus::builder()
 
 ```rust
 use stdiobus_backend_native::NativeBackend;
+use stdiobus_core::{BusConfig, PoolConfig, ConfigSource};
 
+// From programmatic config (no file needed)
+let config = BusConfig {
+    pools: vec![PoolConfig {
+        id: "worker".into(),
+        command: "node".into(),
+        args: vec!["./worker.js".into()],
+        instances: 2,
+    }],
+    limits: None,
+};
+let backend = NativeBackend::from_config_source(&ConfigSource::Config(config))?;
+
+// From file path
 let backend = NativeBackend::new("./config.json")?;
 
 backend.start().await?;

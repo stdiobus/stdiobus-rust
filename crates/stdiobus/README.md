@@ -23,26 +23,27 @@ stdiobus = { version = "1.0", features = ["native"] }
 ## Usage
 
 ```rust
-use stdiobus::{StdioBus, Result, RequestOptions};
+use stdiobus::{StdioBus, BusConfig, PoolConfig, Result};
 use serde_json::json;
-use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let bus = StdioBus::builder()
-        .config_path("./config.json")
+        .config(BusConfig {
+            pools: vec![PoolConfig {
+                id: "worker".into(),
+                command: "node".into(),
+                args: vec!["./worker.js".into()],
+                instances: 4,
+            }],
+            limits: None,
+        })
         .backend_native()
-        .timeout(Duration::from_secs(60))
         .build()?;
 
     bus.start().await?;
 
-    let opts = RequestOptions::default().agent_id("my-agent");
-    let result = bus.request_with_options("initialize", json!({
-        "protocolVersion": 1,
-        "clientInfo": {"name": "my-app", "version": "1.0.0"},
-        "clientCapabilities": {}
-    }), opts).await?;
+    let result = bus.request("tools/list", json!({})).await?;
 
     bus.stop().await?;
     Ok(())
