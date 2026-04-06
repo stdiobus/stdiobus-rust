@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Verification: every Rust code block from sdk/rust/README.md
+//! Verification: every Rust code block from README.md
 //! is copied here VERBATIM and executed.
 //!
 //! Zero modifications to the code from README.

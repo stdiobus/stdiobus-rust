@@ -25,7 +25,6 @@ api-keys-json
 # Rust
 target/
 Cargo.lock
-!sdk/rust/Cargo.lock
 
 # Go
 *.exe

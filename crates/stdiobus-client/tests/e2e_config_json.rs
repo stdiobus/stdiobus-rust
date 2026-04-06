@@ -19,7 +19,7 @@ mod e2e {
         let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap();
         let workspace = std::path::Path::new(&manifest)
             .parent().unwrap()  // crates/
-            .parent().unwrap(); // sdk/rust/
+            .parent().unwrap();  // root
         let root = workspace.parent().unwrap().parent().unwrap(); // repo root
         root.join("examples").join("echo-worker.js")
             .to_string_lossy().into_owned()
