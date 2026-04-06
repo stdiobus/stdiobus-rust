@@ -18,13 +18,21 @@ tokio = { version = "1", features = ["full"] }
 ## Quick Start
 
 ```rust
-use stdiobus_client::{StdioBus, Result};
+use stdiobus_client::{StdioBus, BusConfig, PoolConfig, Result};
 use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let bus = StdioBus::builder()
-        .config_path("./config.json")
+        .config(BusConfig {
+            pools: vec![PoolConfig {
+                id: "worker".into(),
+                command: "node".into(),
+                args: vec!["./worker.js".into()],
+                instances: 2,
+            }],
+            limits: None,
+        })
         .build()?;
 
     bus.start().await?;

@@ -173,3 +173,116 @@ impl Default for DockerOptions {
         }
     }
 }
+
+// ============================================================================
+// Bus Configuration Types
+// ============================================================================
+
+/// Worker pool configuration.
+///
+/// Matches the C bus JSON schema: `pools[].{id, command, args, instances}`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PoolConfig {
+    /// Unique pool identifier
+    pub id: String,
+    /// Executable path
+    pub command: String,
+    /// Command-line arguments (default: empty)
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// Number of worker instances (must be ≥ 1)
+    pub instances: u32,
+}
+
+/// Operational limits.
+///
+/// All fields optional — C bus applies defaults for omitted values.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct LimitsConfig {
+    /// Per-connection input buffer limit in bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_input_buffer: Option<usize>,
+    /// Per-connection output queue limit in bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_output_queue: Option<usize>,
+    /// Max restarts within time window
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_restarts: Option<u32>,
+    /// Restart counting window in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub restart_window_sec: Option<u32>,
+    /// Graceful shutdown timeout in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drain_timeout_sec: Option<u32>,
+    /// Backpressure timeout in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backpressure_timeout_sec: Option<u32>,
+}
+
+/// stdio_bus JSON configuration.
+///
+/// Matches the C bus config schema exactly. This is the primary way to
+/// configure the bus programmatically — no config.json file needed.
+///
+/// # Example
+/// ```
+/// use stdiobus_core::BusConfig;
+///
+/// let config = BusConfig {
+///     pools: vec![stdiobus_core::PoolConfig {
+///         id: "worker".into(),
+///         command: "node".into(),
+///         args: vec!["./worker.js".into()],
+///         instances: 4,
+///     }],
+///     limits: None,
+/// };
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BusConfig {
+    /// Worker pool definitions (at least one required)
+    pub pools: Vec<PoolConfig>,
+    /// Operational limits (optional, C bus applies defaults)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limits: Option<LimitsConfig>,
+}
+
+impl BusConfig {
+    /// Validate the configuration.
+    ///
+    /// Returns `Ok(())` if valid, or an error describing the problem.
+    pub fn validate(&self) -> std::result::Result<(), String> {
+        if self.pools.is_empty() {
+            return Err("at least one pool is required".into());
+        }
+        for (i, pool) in self.pools.iter().enumerate() {
+            if pool.id.is_empty() {
+                return Err(format!("pool {} missing id", i));
+            }
+            if pool.command.is_empty() {
+                return Err(format!("pool '{}' missing command", pool.id));
+            }
+            if pool.instances == 0 {
+                return Err(format!("pool '{}' instances must be ≥ 1", pool.id));
+            }
+        }
+        Ok(())
+    }
+
+    /// Serialize to JSON string.
+    pub fn to_json(&self) -> serde_json::Result<String> {
+        serde_json::to_string(self)
+    }
+}
+
+/// Configuration source for the bus.
+///
+/// Exactly one variant is used. The SDK resolves this to JSON
+/// before passing to the C bus.
+#[derive(Debug, Clone)]
+pub enum ConfigSource {
+    /// Path to a JSON config file on disk
+    Path(String),
+    /// Typed configuration object (primary, recommended)
+    Config(BusConfig),
+}

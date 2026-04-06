@@ -15,7 +15,7 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
-use stdiobus_core::{Backend, BusMessage, BusState, BusStats, Error, Result};
+use stdiobus_core::{Backend, BusMessage, BusState, BusStats, ConfigSource, Error, Result};
 use stdiobus_ffi::*;
 use tokio::sync::{mpsc, Mutex};
 
@@ -96,7 +96,7 @@ struct CallbackContext {
 /// Native backend using FFI to libstdio_bus
 pub struct NativeBackend {
     bus: Arc<BusPtr>,
-    config_path: String,
+    config: InternalConfig,
     state: Arc<AtomicU8>,
     message_tx: mpsc::Sender<BusMessage>,
     message_rx: Mutex<Option<mpsc::Receiver<BusMessage>>>,
@@ -104,6 +104,12 @@ pub struct NativeBackend {
     running: Arc<AtomicBool>,
     /// Owned callback context — freed only after C library is fully destroyed
     callback_ctx: Mutex<Option<CtxPtr>>,
+}
+
+/// Internal config representation
+enum InternalConfig {
+    Path(String),
+    Json(String),
 }
 
 struct Stats {
@@ -116,12 +122,31 @@ struct Stats {
 }
 
 impl NativeBackend {
+    /// Create from a file path (legacy)
     pub fn new(config_path: &str) -> Result<Self> {
+        Self::create(InternalConfig::Path(config_path.to_string()))
+    }
+
+    /// Create from a ConfigSource (primary)
+    pub fn from_config_source(source: &ConfigSource) -> Result<Self> {
+        let internal = match source {
+            ConfigSource::Path(p) => InternalConfig::Path(p.clone()),
+            ConfigSource::Config(cfg) => {
+                let json = cfg.to_json().map_err(|e| Error::InvalidArgument {
+                    message: format!("Failed to serialize config: {}", e),
+                })?;
+                InternalConfig::Json(json)
+            }
+        };
+        Self::create(internal)
+    }
+
+    fn create(config: InternalConfig) -> Result<Self> {
         let (tx, rx) = mpsc::channel(1000);
 
         Ok(Self {
             bus: Arc::new(BusPtr::new()),
-            config_path: config_path.to_string(),
+            config,
             state: Arc::new(AtomicU8::new(0)),
             message_tx: tx,
             message_rx: Mutex::new(Some(rx)),
@@ -201,13 +226,30 @@ impl Backend for NativeBackend {
         // Store the pointer so we can free it on stop/drop
         *self.callback_ctx.lock().await = Some(CtxPtr(ctx_ptr));
 
-        // Clone config path for the blocking task
-        let config_path = self.config_path.clone();
+        // Clone config for the blocking task
+        let config = match &self.config {
+            InternalConfig::Path(p) => InternalConfig::Path(p.clone()),
+            InternalConfig::Json(j) => InternalConfig::Json(j.clone()),
+        };
         
         let bus = tokio::task::spawn_blocking(move || {
-            let config_cstr = CString::new(config_path).map_err(|_| Error::InvalidArgument {
-                message: "Invalid config path".to_string(),
-            })?;
+            // Prepare C strings based on config source
+            let (path_ptr, json_ptr, _path_cstr, _json_cstr) = match &config {
+                InternalConfig::Path(p) => {
+                    let cstr = CString::new(p.as_str()).map_err(|_| Error::InvalidArgument {
+                        message: "Invalid config path".to_string(),
+                    })?;
+                    let ptr = cstr.as_ptr();
+                    (ptr, ptr::null(), Some(cstr), None)
+                }
+                InternalConfig::Json(j) => {
+                    let cstr = CString::new(j.as_str()).map_err(|_| Error::InvalidArgument {
+                        message: "Invalid config JSON (contains null byte)".to_string(),
+                    })?;
+                    let ptr = cstr.as_ptr();
+                    (ptr::null(), ptr, None, Some(cstr))
+                }
+            };
 
             let listener = stdio_bus_listener_config_t {
                 mode: stdio_bus_listen_mode_t::STDIO_BUS_LISTEN_NONE,
@@ -217,8 +259,8 @@ impl Backend for NativeBackend {
             };
 
             let options = stdio_bus_options_t {
-                config_path: config_cstr.as_ptr(),
-                config_json: ptr::null(),
+                config_path: path_ptr,
+                config_json: json_ptr,
                 listener,
                 on_message: Some(on_message_callback),
                 on_error: Some(on_error_callback),

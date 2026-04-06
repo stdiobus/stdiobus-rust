@@ -32,96 +32,174 @@ stdiobus-client = { version = "1.0", features = ["native"] }
 ## Quick Start
 
 ```rust
-use stdiobus_client::{StdioBus, Result, RequestOptions};
+use stdiobus_client::{StdioBus, BusConfig, PoolConfig, Result};
 use serde_json::json;
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Create bus with builder pattern
     let bus = StdioBus::builder()
-        .config_path("./config.json")
+        .config(BusConfig {
+            pools: vec![PoolConfig {
+                id: "echo".into(),
+                command: "node".into(),
+                args: vec!["./examples/echo-worker.js".into()],
+                instances: 1,
+            }],
+            limits: None,
+        })
         .backend_native()
-        .timeout(Duration::from_secs(60))
         .build()?;
 
-    // Start workers
     bus.start().await?;
+    tokio::time::sleep(Duration::from_millis(500)).await;
 
-    // Initialize agent (required before other requests)
-    let opts = RequestOptions::default().agent_id("my-agent");
-    let init = bus.request_with_options("initialize", json!({
-        "protocolVersion": 1,
-        "clientInfo": {"name": "my-app", "version": "1.0.0"},
-        "clientCapabilities": {}
-    }), opts).await?;
-    println!("Agent initialized: {:?}", init.get("agentInfo"));
+    let result = bus.request("echo", json!({"message": "hello"})).await?;
+    println!("Response: {}", result);
 
-    // Create session
-    let opts = RequestOptions::default().agent_id("my-agent");
-    let session = bus.request_with_options("session/new", json!({
-        "cwd": std::env::current_dir()?.to_string_lossy(),
-        "mcpServers": []
-    }), opts).await?;
-    let session_id = session.get("sessionId").and_then(|s| s.as_str()).unwrap();
-    println!("Session: {}", session_id);
-
-    // Send prompt
-    let opts = RequestOptions::default().agent_id("my-agent");
-    let result = bus.request_with_options("session/prompt", json!({
-        "sessionId": session_id,
-        "prompt": [{"type": "text", "text": "Hello!"}]
-    }), opts).await?;
-    println!("Response: {:?}", result.get("text"));
-
-    // Stop gracefully
     bus.stop().await?;
 
     Ok(())
 }
 ```
 
-## Configuration
+<details>
+<summary>Verified output (from <code>cargo test --test readme_examples --features native</code>)</summary>
 
-Create a `config.json`:
+```
+[INFO] Process manager created with 1 workers across 1 pools
+[INFO] Router created
+[INFO] Starting 1 workers for pool 'echo'
+[INFO] [worker=0] Worker started (pool=echo, cmd=node)
+[INFO] All 1 workers started successfully
+[echo-worker] Started, waiting for NDJSON messages on stdin...
+Response: {"echo":{"message":"hello"},"method":"echo","timestamp":"..."}
+[INFO] Stopping all workers
+[echo-worker] Received SIGTERM, shutting down gracefully...
+[INFO] All workers stopped
+```
 
-```json
-{
-  "pools": [
-    {
-      "id": "mcp-worker",
-      "command": "node",
-      "args": ["./worker.js"],
-      "instances": 4
-    }
-  ],
-  "limits": {
-    "max_input_buffer": 1048576,
-    "max_output_queue": 4194304
-  }
+</details>
+
+## Real-World Usage (ACP Agent)
+
+Full ACP protocol flow: initialize agent, create session, send prompt.
+Requires an ACP-compatible worker (e.g., codex-acp) and appropriate credentials.
+
+```rust
+use stdiobus_client::{StdioBus, BusConfig, PoolConfig, Result, RequestOptions};
+use serde_json::json;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let bus = StdioBus::builder()
+        .config(BusConfig {
+            pools: vec![PoolConfig {
+                id: "acp-worker".into(),
+                command: "node".into(),
+                args: vec!["./acp-worker.js".into()],
+                instances: 1,
+            }],
+            limits: None,
+        })
+        .backend_native()
+        .timeout(Duration::from_secs(60))
+        .build()?;
+
+    bus.start().await?;
+
+    // 1. Initialize agent
+    let opts = RequestOptions::default().agent_id("my-agent");
+    let init = bus.request_with_options("initialize", json!({
+        "protocolVersion": 1,
+        "clientInfo": {"name": "my-app", "version": "1.0.0"},
+        "clientCapabilities": {}
+    }), opts).await?;
+    println!("Agent: {:?}", init.get("agentInfo"));
+
+    // 2. Create session
+    let opts = RequestOptions::default().agent_id("my-agent");
+    let session = bus.request_with_options("session/new", json!({
+        "cwd": std::env::current_dir()?.to_string_lossy(),
+        "mcpServers": []
+    }), opts).await?;
+    let session_id = session["sessionId"].as_str().unwrap();
+
+    // 3. Send prompt
+    let opts = RequestOptions::default().agent_id("my-agent");
+    let result = bus.request_with_options("session/prompt", json!({
+        "sessionId": session_id,
+        "prompt": [{"type": "text", "text": "What is 2+2?"}]
+    }), opts).await?;
+    println!("Response: {:?}", result.get("text"));
+
+    bus.stop().await?;
+    Ok(())
 }
 ```
+
+## Configuration
+
+Configuration is passed programmatically via `BusConfig`:
+
+```rust
+use stdiobus_client::{BusConfig, PoolConfig, LimitsConfig};
+
+let config = BusConfig {
+    pools: vec![PoolConfig {
+        id: "worker".into(),
+        command: "node".into(),
+        args: vec!["./worker.js".into()],
+        instances: 4,
+    }],
+    limits: Some(LimitsConfig {
+        max_input_buffer: Some(2097152),
+        max_restarts: Some(10),
+        ..Default::default()
+    }),
+};
+```
+
+File-based config is also supported for backward compatibility:
+
+```rust
+let bus = StdioBus::builder()
+    .config_path("./config.json")
+    .build()?;
+```
+
+`.config()` and `.config_path()` are mutually exclusive.
 
 ## Backend Selection
 
 ```rust
-use stdiobus_client::{StdioBus, BackendMode};
+use stdiobus_client::{StdioBus, BusConfig, PoolConfig};
 
 // Auto (default): native on Unix, docker on Windows
 let bus = StdioBus::builder()
-    .config_path("./config.json")
+    .config(BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        limits: None,
+    })
     .backend_auto()
     .build()?;
 
-// Force native backend (requires libstdio_bus)
+// Force native backend
 let bus = StdioBus::builder()
-    .config_path("./config.json")
+    .config(BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        limits: None,
+    })
     .backend_native()
     .build()?;
 
-// Force Docker backend (image tag depends on worker runtime: node, python, full)
+// Force Docker backend
 let bus = StdioBus::builder()
-    .config_path("./config.json")
+    .config(BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        limits: None,
+    })
     .backend_docker()
     .docker_image("stdiobus/stdiobus:node")
     .build()?;
@@ -210,34 +288,6 @@ cargo build
 cargo test
 
 # Build with native backend
-cargo build --features native
-```
-
-### Building Native Backend
-
-The native backend uses `libstdio_bus.a` bundled in `lib/` directory.
-
-**For SDK users:** The library is bundled. No additional setup needed.
-
-```bash
-# Build SDK
-cargo build --release
-
-# Run unit tests
-cargo test --release
-```
-
-**For development (building from main repo):**
-
-```bash
-# Build libstdio_bus from source (from main repository root)
-make lib
-
-# Copy to SDK
-cp build/libstdio_bus.a sdk/rust/lib/
-
-# Build Rust SDK
-cd sdk/rust
 cargo build --features native
 ```
 

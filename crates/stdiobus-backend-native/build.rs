@@ -20,7 +20,7 @@ fn main() {
         println!("cargo:warning=docs.rs build: skipping native library linking");
         return;
     }
-    
+
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let crate_path = PathBuf::from(&manifest_dir);
     let lib_base = crate_path.join("lib");

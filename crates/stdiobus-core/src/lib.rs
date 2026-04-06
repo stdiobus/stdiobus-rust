@@ -2,6 +2,8 @@
 // Copyright (c) 2026-present Raman Marozau <raman@worktif.com>
 // Copyright (c) 2026-present stdiobus contributors
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 //! Core types and protocol models for stdio_bus
 //!
 //! This crate provides the fundamental types used across all stdio_bus components:
@@ -26,7 +28,7 @@ pub use error::{Error, ErrorCode, Result};
 pub use message::{JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcError};
 pub use state::BusState;
 pub use stats::BusStats;
-pub use types::{BackendMode, RequestOptions, Identity, Extensions, ExtensionInfo, DockerOptions};
+pub use types::{BackendMode, RequestOptions, Identity, Extensions, ExtensionInfo, DockerOptions, PoolConfig, LimitsConfig, BusConfig, ConfigSource};
 
 use std::time::{SystemTime, UNIX_EPOCH};
 

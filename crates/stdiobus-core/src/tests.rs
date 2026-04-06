@@ -442,3 +442,188 @@ fn test_bus_message_debug() {
     let debug = format!("{:?}", msg);
     assert!(debug.contains("test"));
 }
+
+// ============================================================================
+// BusConfig Documentation Examples — verified by test execution
+// ============================================================================
+
+#[test]
+fn test_doc_example_basic_config() {
+    // From README: basic programmatic config
+    let config = BusConfig {
+        pools: vec![PoolConfig {
+            id: "mcp-worker".into(),
+            command: "node".into(),
+            args: vec!["./worker.js".into()],
+            instances: 4,
+        }],
+        limits: None,
+    };
+
+    assert!(config.validate().is_ok());
+    let json = config.to_json().unwrap();
+    assert!(json.contains("\"id\":\"mcp-worker\""));
+    assert!(json.contains("\"instances\":4"));
+    // Verify no limits key when None
+    assert!(!json.contains("\"limits\""));
+}
+
+#[test]
+fn test_doc_example_config_with_limits() {
+    // From README: config with explicit limits
+    let config = BusConfig {
+        pools: vec![PoolConfig {
+            id: "worker".into(),
+            command: "node".into(),
+            args: vec!["./worker.js".into()],
+            instances: 4,
+        }],
+        limits: Some(LimitsConfig {
+            max_input_buffer: Some(2097152),
+            max_restarts: Some(10),
+            ..Default::default()
+        }),
+    };
+
+    assert!(config.validate().is_ok());
+    let json = config.to_json().unwrap();
+    assert!(json.contains("\"max_input_buffer\":2097152"));
+    assert!(json.contains("\"max_restarts\":10"));
+    // Omitted fields should not appear (skip_serializing_if)
+    assert!(!json.contains("\"drain_timeout_sec\""));
+    assert!(!json.contains("\"max_output_queue\""));
+}
+
+#[test]
+fn test_doc_example_config_roundtrip_json() {
+    // Verify: config serialized to JSON can be parsed back identically
+    let config = BusConfig {
+        pools: vec![
+            PoolConfig {
+                id: "echo".into(),
+                command: "/bin/cat".into(),
+                args: vec!["--flag".into()],
+                instances: 2,
+            },
+        ],
+        limits: Some(LimitsConfig {
+            max_input_buffer: Some(1048576),
+            max_output_queue: Some(4194304),
+            max_restarts: Some(5),
+            restart_window_sec: Some(60),
+            drain_timeout_sec: Some(30),
+            backpressure_timeout_sec: Some(60),
+        }),
+    };
+
+    let json = config.to_json().unwrap();
+    let parsed: BusConfig = serde_json::from_str(&json).unwrap();
+
+    assert_eq!(parsed.pools.len(), 1);
+    assert_eq!(parsed.pools[0].id, "echo");
+    assert_eq!(parsed.pools[0].command, "/bin/cat");
+    assert_eq!(parsed.pools[0].args, vec!["--flag"]);
+    assert_eq!(parsed.pools[0].instances, 2);
+
+    let limits = parsed.limits.unwrap();
+    assert_eq!(limits.max_input_buffer, Some(1048576));
+    assert_eq!(limits.max_output_queue, Some(4194304));
+    assert_eq!(limits.max_restarts, Some(5));
+    assert_eq!(limits.restart_window_sec, Some(60));
+    assert_eq!(limits.drain_timeout_sec, Some(30));
+    assert_eq!(limits.backpressure_timeout_sec, Some(60));
+}
+
+#[test]
+fn test_doc_example_config_json_matches_c_schema() {
+    // Verify: JSON output matches the C bus config.json schema exactly
+    let config = BusConfig {
+        pools: vec![PoolConfig {
+            id: "acp-worker".into(),
+            command: "/usr/bin/node".into(),
+            args: vec!["./worker.js".into(), "--mode".into(), "acp".into()],
+            instances: 4,
+        }],
+        limits: Some(LimitsConfig {
+            max_input_buffer: Some(2097152),
+            max_output_queue: Some(8388608),
+            max_restarts: Some(10),
+            restart_window_sec: Some(120),
+            drain_timeout_sec: Some(60),
+            backpressure_timeout_sec: Some(90),
+        }),
+    };
+
+    let json = config.to_json().unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+    // Verify top-level structure matches C schema
+    assert!(parsed.get("pools").unwrap().is_array());
+    assert!(parsed.get("limits").unwrap().is_object());
+
+    // Verify pool fields match C schema field names
+    let pool = &parsed["pools"][0];
+    assert_eq!(pool["id"].as_str().unwrap(), "acp-worker");
+    assert_eq!(pool["command"].as_str().unwrap(), "/usr/bin/node");
+    assert_eq!(pool["instances"].as_u64().unwrap(), 4);
+    assert_eq!(pool["args"][0].as_str().unwrap(), "./worker.js");
+
+    // Verify limits fields match C schema field names (snake_case)
+    let limits = &parsed["limits"];
+    assert_eq!(limits["max_input_buffer"].as_u64().unwrap(), 2097152);
+    assert_eq!(limits["max_output_queue"].as_u64().unwrap(), 8388608);
+    assert_eq!(limits["max_restarts"].as_u64().unwrap(), 10);
+    assert_eq!(limits["restart_window_sec"].as_u64().unwrap(), 120);
+    assert_eq!(limits["drain_timeout_sec"].as_u64().unwrap(), 60);
+    assert_eq!(limits["backpressure_timeout_sec"].as_u64().unwrap(), 90);
+}
+
+#[test]
+fn test_doc_example_validation_errors() {
+    // Empty pools
+    let config = BusConfig { pools: vec![], limits: None };
+    assert!(config.validate().unwrap_err().contains("pool"));
+
+    // Missing id
+    let config = BusConfig {
+        pools: vec![PoolConfig { id: "".into(), command: "node".into(), args: vec![], instances: 1 }],
+        limits: None,
+    };
+    assert!(config.validate().unwrap_err().contains("id"));
+
+    // Missing command
+    let config = BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "".into(), args: vec![], instances: 1 }],
+        limits: None,
+    };
+    assert!(config.validate().unwrap_err().contains("command"));
+
+    // Zero instances
+    let config = BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec![], instances: 0 }],
+        limits: None,
+    };
+    assert!(config.validate().unwrap_err().contains("instances"));
+}
+
+#[test]
+fn test_config_source_variants() {
+    // Path variant
+    let source = ConfigSource::Path("/tmp/config.json".into());
+    match &source {
+        ConfigSource::Path(p) => assert_eq!(p, "/tmp/config.json"),
+        _ => panic!("Expected Path"),
+    }
+
+    // Config variant
+    let source = ConfigSource::Config(BusConfig {
+        pools: vec![PoolConfig { id: "w".into(), command: "echo".into(), args: vec![], instances: 1 }],
+        limits: None,
+    });
+    match &source {
+        ConfigSource::Config(cfg) => {
+            assert_eq!(cfg.pools[0].id, "w");
+        }
+        _ => panic!("Expected Config"),
+    }
+}

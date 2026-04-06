@@ -15,9 +15,16 @@ async fn main() -> stdiobus_core::Result<()> {
     println!("==========================\n");
 
     // Create a bus instance with Docker backend
-    // (Native backend requires libstdio_bus.a to be linked)
     let bus = StdioBus::builder()
-        .config_path("./examples/config.json")
+        .config(stdiobus_core::BusConfig {
+            pools: vec![stdiobus_core::PoolConfig {
+                id: "echo".into(),
+                command: "node".into(),
+                args: vec!["./examples/echo-worker.js".into()],
+                instances: 1,
+            }],
+            limits: None,
+        })
         .backend(BackendMode::Docker)
         .timeout(Duration::from_secs(30))
         .build()?;
