@@ -18,15 +18,16 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-stdiobus-client = "1.0"
+stdiobus-client = "1.1"
 tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
 ```
 
 For native backend (requires libstdio_bus):
 
 ```toml
 [dependencies]
-stdiobus-client = { version = "1.0", features = ["native"] }
+stdiobus-client = { version = "1.1", features = ["native"] }
 ```
 
 ## Quick Start
@@ -42,8 +43,8 @@ async fn main() -> Result<()> {
         .config(BusConfig {
             pools: vec![PoolConfig {
                 id: "echo".into(),
-                command: "node".into(),
-                args: vec!["./examples/echo-worker.js".into()],
+                command: "./examples/echo-worker/target/release/echo-worker".into(),
+                args: vec![],
                 instances: 1,
             }],
             limits: None,
@@ -70,12 +71,12 @@ async fn main() -> Result<()> {
 [INFO] Process manager created with 1 workers across 1 pools
 [INFO] Router created
 [INFO] Starting 1 workers for pool 'echo'
-[INFO] [worker=0] Worker started (pool=echo, cmd=node)
+[INFO] [worker=0] Worker started (pool=echo, cmd=echo-worker)
 [INFO] All 1 workers started successfully
-[echo-worker] Started, waiting for NDJSON messages on stdin...
+[echo-worker-rs] Started, waiting for NDJSON messages on stdin...
 Response: {"echo":{"message":"hello"},"method":"echo","timestamp":"..."}
 [INFO] Stopping all workers
-[echo-worker] Received SIGTERM, shutting down gracefully...
+[echo-worker-rs] Received signal, shutting down...
 [INFO] All workers stopped
 ```
 
@@ -97,8 +98,8 @@ async fn main() -> Result<()> {
         .config(BusConfig {
             pools: vec![PoolConfig {
                 id: "acp-worker".into(),
-                command: "node".into(),
-                args: vec!["./acp-worker.js".into()],
+                command: "/path/to/acp-worker".into(),
+                args: vec![],
                 instances: 1,
             }],
             limits: None,
@@ -149,8 +150,8 @@ use stdiobus_client::{BusConfig, PoolConfig, LimitsConfig};
 let config = BusConfig {
     pools: vec![PoolConfig {
         id: "worker".into(),
-        command: "node".into(),
-        args: vec!["./worker.js".into()],
+        command: "/path/to/worker-binary".into(),
+        args: vec![],
         instances: 4,
     }],
     limits: Some(LimitsConfig {
@@ -179,7 +180,7 @@ use stdiobus_client::{StdioBus, BusConfig, PoolConfig};
 // Auto (default): native on Unix, docker on Windows
 let bus = StdioBus::builder()
     .config(BusConfig {
-        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
         limits: None,
     })
     .backend_auto()
@@ -188,7 +189,7 @@ let bus = StdioBus::builder()
 // Force native backend
 let bus = StdioBus::builder()
     .config(BusConfig {
-        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
         limits: None,
     })
     .backend_native()
@@ -197,7 +198,7 @@ let bus = StdioBus::builder()
 // Force Docker backend
 let bus = StdioBus::builder()
     .config(BusConfig {
-        pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+        pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
         limits: None,
     })
     .backend_docker()
@@ -299,11 +300,14 @@ cargo build --features native
 cargo test
 ```
 
-**Integration/E2E tests** live in the main repository and are NOT part of the SDK package. This keeps the SDK clean for distribution.
+**E2E tests** use the Rust echo-worker (`examples/echo-worker/`). Build it first, then run:
 
 ```bash
-# Run E2E tests (from main repo root, requires running stdio_bus instance)
-# See main repository TESTING-GUIDE.md for details
+# Build the echo worker
+cd examples/echo-worker && cargo build --release && cd ../..
+
+# Run all tests with native backend
+cargo test --features native
 ```
 
 ## Platform Support
