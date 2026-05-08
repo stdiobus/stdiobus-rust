@@ -15,13 +15,24 @@ mod e2e {
     use std::time::Duration;
 
     fn echo_worker_path() -> String {
-        // Resolve path to examples/echo-worker.js from workspace root
+        // Build the Rust echo-worker and return path to binary
         let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let workspace = std::path::Path::new(&manifest)
+        let workspace_root = std::path::Path::new(&manifest)
             .parent().unwrap()  // crates/
-            .parent().unwrap();  // root
-        let root = workspace.parent().unwrap().parent().unwrap(); // repo root
-        root.join("examples").join("echo-worker.js")
+            .parent().unwrap(); // stdiobus-rust (workspace root)
+        let echo_worker_dir = workspace_root.join("examples").join("echo-worker");
+
+        // Build echo-worker (release for speed)
+        let status = std::process::Command::new("cargo")
+            .args(["build", "--release"])
+            .current_dir(&echo_worker_dir)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .expect("Failed to run cargo build for echo-worker");
+        assert!(status.success(), "echo-worker build failed");
+
+        echo_worker_dir.join("target").join("release").join("echo-worker")
             .to_string_lossy().into_owned()
     }
 
@@ -29,13 +40,12 @@ mod e2e {
     async fn programmatic_config_echo_roundtrip() {
         let worker = echo_worker_path();
 
-        // --- This is the README Quick Start pattern ---
         let bus = StdioBus::builder()
             .config(BusConfig {
                 pools: vec![PoolConfig {
                     id: "echo".into(),
-                    command: "node".into(),
-                    args: vec![worker],
+                    command: worker,
+                    args: vec![],
                     instances: 1,
                 }],
                 limits: None,
@@ -82,8 +92,8 @@ mod e2e {
             .config(BusConfig {
                 pools: vec![PoolConfig {
                     id: "echo".into(),
-                    command: "node".into(),
-                    args: vec![worker],
+                    command: worker,
+                    args: vec![],
                     instances: 2,
                 }],
                 limits: Some(stdiobus_client::LimitsConfig {

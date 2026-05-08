@@ -2,9 +2,16 @@
 // Copyright (c) 2026-present Raman Marozau <raman@worktif.com>
 // Copyright (c) 2026-present stdiobus contributors
 
-//! Basic example of using stdio_bus Rust SDK
+//! Basic example of using stdio_bus Rust SDK with Rust echo-worker
 //!
-//! Run with: cargo run --example basic
+//! Prerequisites:
+//!   cd examples/echo-worker && cargo build --release
+//!
+//! Run with:
+//!   cargo run --example basic --features native
+//!
+//! Or with Docker backend (no build needed for worker):
+//!   cargo run --example basic
 
 use stdiobus_client::{StdioBus, BackendMode};
 use std::time::Duration;
@@ -14,18 +21,31 @@ async fn main() -> stdiobus_core::Result<()> {
     println!("stdio_bus Rust SDK Example");
     println!("==========================\n");
 
-    // Create a bus instance with Docker backend
+    // Resolve echo-worker binary path (Rust worker, no Node.js dependency)
+    let echo_worker = std::env::current_dir()
+        .unwrap()
+        .join("examples/echo-worker/target/release/echo-worker");
+
+    if !echo_worker.exists() {
+        eprintln!("Echo worker not found at: {}", echo_worker.display());
+        eprintln!("Build it first: cd examples/echo-worker && cargo build --release");
+        std::process::exit(1);
+    }
+
+    let worker_path = echo_worker.to_string_lossy().to_string();
+
+    // Create a bus instance
     let bus = StdioBus::builder()
         .config(stdiobus_core::BusConfig {
             pools: vec![stdiobus_core::PoolConfig {
                 id: "echo".into(),
-                command: "node".into(),
-                args: vec!["./examples/echo-worker.js".into()],
+                command: worker_path,
+                args: vec![],
                 instances: 1,
             }],
             limits: None,
         })
-        .backend(BackendMode::Docker)
+        .backend(BackendMode::Auto)
         .timeout(Duration::from_secs(30))
         .build()?;
 
@@ -37,9 +57,12 @@ async fn main() -> stdiobus_core::Result<()> {
     bus.start().await?;
     println!("State: {:?}", bus.state());
 
+    // Wait for worker to initialize
+    tokio::time::sleep(Duration::from_millis(200)).await;
+
     // Send a request
-    println!("\nSending tools/list request...");
-    match bus.request("tools/list", serde_json::json!({})).await {
+    println!("\nSending echo request...");
+    match bus.request("echo", serde_json::json!({"message": "hello from Rust"})).await {
         Ok(result) => println!("Response: {}", result),
         Err(e) => println!("Error: {}", e),
     }

@@ -1,0 +1,10 @@
+[package]
+name = "echo-worker"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Minimal NDJSON echo worker for testing stdio Bus (pure Rust, no async runtime needed)"
+
+[dependencies]
+serde_json = "1.0"
+libc = "0.2"

@@ -15,8 +15,8 @@ fn readme_section_configuration() {
     let config = BusConfig {
         pools: vec![PoolConfig {
             id: "worker".into(),
-            command: "node".into(),
-            args: vec!["./worker.js".into()],
+            command: "/path/to/worker-binary".into(),
+            args: vec![],
             instances: 4,
         }],
         limits: Some(LimitsConfig {
@@ -72,23 +72,36 @@ fn readme_section_request_options() {
 #[cfg(feature = "native")]
 #[tokio::test]
 async fn readme_section_quick_start() {
-    use stdiobus_client::{StdioBus, BusConfig, PoolConfig, Result};
+    use stdiobus_client::{StdioBus, BusConfig, PoolConfig};
     use serde_json::json;
     use std::time::Duration;
 
-    // Resolve echo worker path
+    // Build Rust echo-worker
     let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let root = std::path::Path::new(&manifest).parent().unwrap().parent().unwrap()
-        .parent().unwrap().parent().unwrap();
-    let worker = root.join("examples").join("echo-worker.js").to_string_lossy().into_owned();
+    let workspace_root = std::path::Path::new(&manifest)
+        .parent().unwrap()   // crates/
+        .parent().unwrap();  // stdiobus-rust (workspace root)
+    let echo_worker_dir = workspace_root.join("examples").join("echo-worker");
 
-    // --- BEGIN: identical to README Quick Start body ---
+    let status = std::process::Command::new("cargo")
+        .args(["build", "--release"])
+        .current_dir(&echo_worker_dir)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .expect("Failed to build echo-worker");
+    assert!(status.success(), "echo-worker build failed");
+
+    let worker = echo_worker_dir.join("target").join("release").join("echo-worker")
+        .to_string_lossy().into_owned();
+
+    // --- BEGIN: Quick Start pattern with Rust echo-worker ---
     let bus = StdioBus::builder()
         .config(BusConfig {
             pools: vec![PoolConfig {
                 id: "echo".into(),
-                command: "node".into(),
-                args: vec![worker],
+                command: worker,
+                args: vec![],
                 instances: 1,
             }],
             limits: None,
@@ -107,7 +120,7 @@ async fn readme_section_quick_start() {
     assert_eq!(result["echo"]["message"].as_str(), Some("hello"));
 
     bus.stop().await.unwrap();
-    // --- END: identical to README Quick Start body ---
+    // --- END ---
 }
 
 #[cfg(not(feature = "native"))]
@@ -127,7 +140,7 @@ fn readme_section_backend_auto() {
     // Auto (default): native on Unix, docker on Windows
     let bus = StdioBus::builder()
         .config(BusConfig {
-            pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+            pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
             limits: None,
         })
         .backend_auto()
@@ -143,7 +156,7 @@ fn readme_section_backend_native() {
     // Force native backend
     let bus = StdioBus::builder()
         .config(BusConfig {
-            pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+            pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
             limits: None,
         })
         .backend_native()
@@ -159,7 +172,7 @@ fn readme_section_backend_docker() {
     // Force Docker backend
     let bus = StdioBus::builder()
         .config(BusConfig {
-            pools: vec![PoolConfig { id: "w".into(), command: "node".into(), args: vec!["worker.js".into()], instances: 2 }],
+            pools: vec![PoolConfig { id: "w".into(), command: "/path/to/worker".into(), args: vec![], instances: 2 }],
             limits: None,
         })
         .backend_docker()
@@ -177,8 +190,7 @@ fn readme_section_backend_docker() {
 #[cfg(feature = "native")]
 #[tokio::test]
 async fn readme_section_real_world_usage_compiles() {
-    use stdiobus_client::{StdioBus, BusConfig, PoolConfig, Result, RequestOptions};
-    use serde_json::json;
+    use stdiobus_client::{StdioBus, BusConfig, PoolConfig, RequestOptions};
     use std::time::Duration;
 
     // Verify the builder + RequestOptions chain compiles
@@ -186,8 +198,8 @@ async fn readme_section_real_world_usage_compiles() {
         .config(BusConfig {
             pools: vec![PoolConfig {
                 id: "acp-worker".into(),
-                command: "node".into(),
-                args: vec!["./acp-worker.js".into()],
+                command: "/path/to/acp-worker".into(),
+                args: vec![],
                 instances: 1,
             }],
             limits: None,
