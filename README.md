@@ -1,16 +1,31 @@
-# stdiobus-rust
+<h1 align="center" style="font-weight:500"><strong>stdio Bus Rust SDK for AI Agent Transport</strong></h1>
 
-Rust SDK for stdio_bus - the AI agent transport layer.
+<p align="center">An async Rust SDK for <a href="https://stdiobus.com" target="_blank">stdio Bus</a> — a process-embedded message bus for AI agent orchestration. Manages child worker processes communicating over stdin/stdout using JSON-RPC (MCP/ACP protocols).</p>
 
-[![Crates.io](https://img.shields.io/crates/v/stdiobus?style=for-the-badge&logo=rust&logoColor=white&color=orange)](https://crates.io/crates/stdiobus)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=apache)](LICENSE)
+<p align="center">
+  <a href="https://crates.io/crates/stdiobus"><img src="https://img.shields.io/crates/v/stdiobus?style=for-the-badge&logo=rust&logoColor=white&color=orange" alt="Crates.io"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/protocol-MCP-purple?style=for-the-badge&logo=jsonwebtokens" alt="MCP"></a>
+  <a href="https://agentclientprotocol.com"><img src="https://img.shields.io/badge/protocol-ACP-purple?style=for-the-badge&logo=jsonwebtokens" alt="ACP"></a>
+  <a href="https://github.com/stdiobus"><img src="https://img.shields.io/badge/ecosystem-stdio%20Bus-ff4500?style=for-the-badge" alt="stdioBus"></a>
+  <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/Rust-1.70%2B-000000?style=for-the-badge&logo=rust" alt="Rust"></a>
+  <a href="https://tokio.rs"><img src="https://img.shields.io/badge/async-Tokio-463e7c?style=for-the-badge" alt="Tokio"></a>
+  <a href="https://github.com/stdiobus/stdiobus-rust"><img src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey?style=for-the-badge&logo=linux" alt="Platform"></a>
+  <a href="https://github.com/stdiobus/stdiobus-rust"><img src="https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-blue?style=for-the-badge" alt="Architecture"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=opensourceinitiative" alt="License"></a>
+  <a href="https://github.com/stdiobus/stdiobus-rust"><img src="https://img.shields.io/badge/tests-112%20passing-brightgreen?style=for-the-badge&logo=rust" alt="Tests"></a>
+  <a href="https://github.com/stdiobus/stdiobus-rust"><img src="https://img.shields.io/badge/e2e-2%20passing-brightgreen?style=for-the-badge&logo=rust" alt="E2E"></a>
+  <a href="https://github.com/stdiobus/stdiobus-rust"><img src="https://img.shields.io/badge/backend-Native%20FFI%20%7C%20Docker-orange?style=for-the-badge" alt="Backends"></a>
+</p>
+
+---
 
 ## Features
 
-- **Async-first** - Built on Tokio for high-performance async I/O
-- **Multiple backends** - Native (FFI to libstdio_bus) or Docker
-- **Type-safe** - Full Rust type safety with proper error handling
-- **Zero-copy where possible** - Efficient message handling
+- **Async-first** — Built on Tokio for high-performance async I/O
+- **Multiple backends** — Native (FFI to libstdio_bus) or Docker
+- **Type-safe** — Full Rust type safety with proper error handling
+- **Zero-copy where possible** — Efficient message handling
+- **ACP streaming** — Automatic aggregation of `agent_message_chunk` notifications
 
 ## Installation
 
@@ -284,9 +299,6 @@ cd stdiobus-rust
 
 # Build all crates
 cargo build
-
-# Run tests
-cargo test
 
 # Build with native backend
 cargo build --features native
